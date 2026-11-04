@@ -91,3 +91,16 @@ textarea{resize:none}
 .hero h1{font-size:34px}.hero p{font-size:18px}.title{font-size:28px}.section{padding:50px 16px}
 .product{width:100%;max-width:340px}.popup-content img{height:220px}.dong{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* LỊCH SỬ ĐƠN */
+.don{background:#fff;border-radius:15px;padding:20px;margin-bottom:18px;box-shadow:0 5px 15px rgba(0,0,0,.1)}
+.don-dau{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.don-dau small{color:#777}
+.don ul{list-style:none;border-top:1px solid #eee;border-bottom:1px solid #eee;padding:10px 0;margin:10px 0}
+.don li{display:flex;justify-content:space-between;gap:10px;padding:3px 0}
+.don-tong{display:flex;justify-content:space-between;font-weight:bold;color:red;font-size:18px}
+.don-cuoi{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.don .nut{padding:9px 20px;font-size:14px}
+.nut.phu{background:#fff;color:#555;border:1px solid #bbb}
+.nut.phu:hover{background:#f0f0f0}
+.ok{color:green;font-weight:bold}

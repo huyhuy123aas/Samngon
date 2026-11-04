@@ -40,6 +40,13 @@ const Gio={
  tong(){return this.ds().reduce((t,i)=>t+i.sl*timSP(i.id).gia,0)}
 };
 
+/* ===== LỊCH SỬ ĐƠN HÀNG (lưu trên trình duyệt của khách, giữ tối đa 50 đơn gần nhất) ===== */
+const LichSu={
+ ds(){const d=lay("donhang",[]);return Array.isArray(d)?d:[]},
+ them(don){ghi("donhang",[don,...this.ds()].slice(0,50))},
+ xoa(){ghi("donhang",[])}
+};
+
 function capNhatBadge(){const b=$("#badge");if(b){const n=Gio.tongSL();b.textContent=n;b.hidden=!n}}
 
 function toast(m,err){
@@ -60,7 +67,7 @@ function theSP(p){return`<div class="product" data-id="${p.id}">
 function dungChung(){
  const trang=location.pathname.split("/").pop()||"index.html";
  const a=(h,t)=>`<a href="${h}"${trang===h?' class="on"':""}>${t}</a>`;
- $("#nav").innerHTML=a("index.html","Trang Chủ")+a("sanpham.html","Sản Phẩm")+a("dathang.html",'🛒 Đặt Hàng <span id="badge" hidden>0</span>');
+ $("#nav").innerHTML=a("index.html","Trang Chủ")+a("sanpham.html","Sản Phẩm")+a("dathang.html",'🛒 Đặt Hàng <span id="badge" hidden>0</span>')+a("lichsu.html","Đơn Của Tôi");
  $("#footer").innerHTML=`<h3>NƯỚC SÂM HUY NGUYỄN</h3><p><a href="${FACEBOOK}" target="_blank" rel="noopener">Facebook</a> | <a href="tel:${SDT_SHOP}">Gọi ngay</a></p><p>© 2026 Nước Sâm Huy Nguyễn</p>`;
  document.body.insertAdjacentHTML("beforeend",`<a class="goi" href="tel:${SDT_SHOP}" title="Gọi ngay" aria-label="Gọi ngay">📞</a>`);
  capNhatBadge();

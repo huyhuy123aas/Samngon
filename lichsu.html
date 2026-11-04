@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đơn Của Tôi - Nước Sâm Huy Nguyễn</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav id="nav"></nav>
+
+<div class="container">
+<h1 class="title">📦 ĐƠN CỦA TÔI</h1>
+<p class="trong">Danh sách các đơn bạn đã đặt trên thiết bị này.</p>
+<div id="ds"></div>
+<div style="text-align:center"><button type="button" id="xoaLS" class="nut phu" hidden>🗑️ Xóa lịch sử</button></div>
+</div>
+
+<footer id="footer"></footer>
+
+<script src="app.js"></script>
+<script>
+function ve(){
+ const ds=LichSu.ds();
+ $("#xoaLS").hidden=!ds.length;
+ $("#ds").innerHTML=ds.length?ds.map((d,k)=>`<div class="don">
+<div class="don-dau"><div><b>Mã đơn: ${esc(d.maDon)}</b><br><small>${new Date(d.luc).toLocaleString("vi-VN")}</small></div><span class="ok">✅ Đã gửi cho cửa hàng</span></div>
+<ul>${(d.sp||[]).map(i=>`<li><span>${esc(i.ten)} × ${i.sl}</span><span>${tien(i.gia*i.sl)}</span></li>`).join("")}</ul>
+<div class="don-tong"><span>Tổng tiền</span><span>${tien(d.tong||0)}</span></div>
+<p style="margin-top:10px"><small>Giao đến: ${esc(d.diaChi)}</small></p>
+${d.ghiChu?`<p><small>Ghi chú: ${esc(d.ghiChu)}</small></p>`:""}
+<div class="don-cuoi"><button type="button" class="nut" data-lai="${k}">🔁 Đặt lại đơn này</button><a class="nut phu" href="tel:${SDT_SHOP}">📞 Hỏi cửa hàng</a></div></div>`).join("")
+ :`<div class="don" style="text-align:center;line-height:1.8">Bạn chưa có đơn nào trên thiết bị này.<br><br><a class="btn" href="sanpham.html" style="margin:0">Xem sản phẩm</a></div>`;
+}
+
+// "Đặt lại": thêm các món của đơn cũ vào giỏ rồi sang trang đặt hàng
+$("#ds").onclick=e=>{
+ const b=e.target.closest("[data-lai]");if(!b)return;
+ (LichSu.ds()[b.dataset.lai].sp||[]).forEach(i=>{if(timSP(i.id))Gio.them(i.id,i.sl)});
+ location.href="dathang.html";
+};
+$("#xoaLS").onclick=()=>{if(confirm("Xóa toàn bộ lịch sử đơn hàng trên thiết bị này?")){LichSu.xoa();ve()}};
+
+ve();
+</script>
+</body>
+</html>

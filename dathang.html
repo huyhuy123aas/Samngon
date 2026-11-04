@@ -97,7 +97,9 @@ $("#orderForm").addEventListener("submit",async e=>{
  try{
   await fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(du),signal:ac.signal});
   ghi("khach",{ten,sdt,diaChi});
-  $("#kq").innerHTML=`<h2>✅ Đặt hàng thành công!</h2><p>Mã đơn: <b>${du.maDon}</b></p><ul>${ds.map(i=>`<li>${timSP(i.id).ten} × ${i.sl}</li>`).join("")}</ul><p>Tổng tiền: <b>${du.tongTien}</b></p><p>Chúng tôi sẽ liên hệ <b>${esc(ten)}</b> qua số <b>${esc(sdt)}</b> sớm nhất.</p><br><a class="btn" href="sanpham.html" style="margin:0">Tiếp tục mua sắm</a>`;
+  // lưu đơn vào lịch sử (kèm tên + giá lúc đặt, để sau này đổi giá vẫn đúng)
+  LichSu.them({maDon:du.maDon,luc:now.toISOString(),ten,sdt,diaChi,ghiChu,tong:Gio.tong(),sp:ds.map(i=>{const p=timSP(i.id);return{id:i.id,ten:p.ten,gia:p.gia,sl:i.sl}})});
+  $("#kq").innerHTML=`<h2>✅ Đặt hàng thành công!</h2><p>Mã đơn: <b>${du.maDon}</b></p><ul>${ds.map(i=>`<li>${timSP(i.id).ten} × ${i.sl}</li>`).join("")}</ul><p>Tổng tiền: <b>${du.tongTien}</b></p><p>Chúng tôi sẽ liên hệ <b>${esc(ten)}</b> qua số <b>${esc(sdt)}</b> sớm nhất.</p><br><a class="btn" href="sanpham.html" style="margin:0">Tiếp tục mua sắm</a> <a class="btn" href="lichsu.html" style="margin:0;background:#1b5e20">Xem đơn của tôi</a>`;
   Gio.xoa();$("#orderForm").hidden=true;$("#kq").hidden=false;scrollTo(0,0);
  }catch(err){
   console.error(err);
