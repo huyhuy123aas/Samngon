@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nước Sâm Huy Nguyễn</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav id="nav"></nav>
+
+<section class="hero">
+<div class="hero-content">
+<h1>NƯỚC SÂM HUY NGUYỄN</h1>
+<p>Thanh nhiệt tự nhiên • Nấu mới mỗi ngày • Giao tận nơi</p>
+<a class="btn" href="sanpham.html">KHÁM PHÁ SẢN PHẨM</a>
+</div>
+</section>
+
+<section class="section">
+<h2 class="title">Về Chúng Tôi</h2>
+<div class="intro">
+Nước Sâm Huy Nguyễn được nấu từ các loại thảo mộc tự nhiên, mang đến hương vị thanh mát, giúp giải nhiệt cơ thể và bổ sung năng lượng cho ngày mới. Chúng tôi cam kết nấu mới mỗi ngày, đảm bảo chất lượng và an toàn.
+</div>
+</section>
+
+<section class="section">
+<h2 class="title">Khách Hàng Tin Tưởng</h2>
+<div class="stats">
+<div class="stat-box"><h2>1000+</h2><p>Chai đã bán</p></div>
+<div class="stat-box"><h2>100%</h2><p>Thảo mộc tự nhiên</p></div>
+<div class="stat-box"><h2>24/7</h2><p>Hỗ trợ khách hàng</p></div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="title">Sản Phẩm Nổi Bật</h2>
+<div class="products" id="noiBat"></div>
+</section>
+
+<section class="cta">
+<h2>Bạn Đã Sẵn Sàng Giải Nhiệt?</h2>
+<p>Đặt hàng ngay hôm nay để nhận nước sâm tươi mới.</p>
+<a class="btn" href="dathang.html">ĐẶT HÀNG NGAY</a>
+</section>
+
+<footer id="footer"></footer>
+
+<script src="app.js"></script>
+<script>
+$("#noiBat").innerHTML=SAN_PHAM.map(theSP).join("");
+// bấm vào thẻ sản phẩm → mở chi tiết ở trang Sản Phẩm
+$("#noiBat").onclick=e=>{
+ const c=e.target.closest(".product");
+ if(c&&!e.target.closest("[data-them]"))location.href="sanpham.html?sp="+c.dataset.id;
+};
+</script>
+</body>
+</html>

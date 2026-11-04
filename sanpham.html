@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sản phẩm - Nước Sâm Huy Nguyễn</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav id="nav"></nav>
+
+<section class="section">
+<h1 class="title">SẢN PHẨM NƯỚC SÂM</h1>
+<input id="tim" class="tim" type="search" placeholder="🔍 Tìm sản phẩm (vd: không đường, 1 lít)" aria-label="Tìm sản phẩm">
+<div class="products" id="ds"></div>
+<p id="trong" class="trong" hidden>Không tìm thấy sản phẩm phù hợp. Hãy thử từ khóa khác.</p>
+</section>
+
+<div id="popup" class="popup" role="dialog" aria-modal="true" aria-labelledby="pTen">
+<div class="popup-content">
+<button type="button" class="close" onclick="dongPopup()" aria-label="Đóng">×</button>
+<img id="pImg" alt="">
+<h2 id="pTen"></h2>
+<div class="rating">⭐⭐⭐⭐⭐</div>
+<p id="pTP"></p>
+<p id="pCD"></p>
+<p id="pCach"></p>
+<h3 id="pGia" style="color:red"></h3>
+<div class="hang">
+<div class="sl"><button type="button" id="pTru" aria-label="Giảm">−</button><span id="pSL">1</span><button type="button" id="pCong" aria-label="Tăng">+</button></div>
+<button type="button" id="pThem" class="nut">🛒 Thêm vào giỏ</button>
+<button type="button" id="pMua" class="nut" style="background:#e65100">⚡ Mua ngay</button>
+</div>
+</div>
+</div>
+
+<footer id="footer"></footer>
+
+<script src="app.js"></script>
+<script>
+let sp=null,sl=1;
+
+function ve(){ // vẽ danh sách theo từ khóa tìm kiếm
+ const q=bo($("#tim").value.trim());
+ const ds=SAN_PHAM.filter(p=>bo(p.id+" "+p.ten+" "+p.tag).includes(q));
+ $("#ds").innerHTML=ds.map(theSP).join("");
+ $("#trong").hidden=ds.length>0;
+}
+
+function moPopup(id){
+ const p=timSP(id);if(!p)return;
+ sp=p;sl=1;
+ const im=$("#pImg");im.onerror=()=>{im.onerror=null;im.src=ANH_LOI};im.src=p.img;
+ $("#pTen").textContent=p.ten;
+ $("#pTP").textContent="🌿 Thành phần: "+p.thanhPhan;
+ $("#pCD").textContent="💚 Công dụng: "+p.congDung;
+ $("#pCach").textContent="🥤 Cách dùng: "+p.cachDung;
+ $("#pGia").textContent="Giá bán: "+tien(p.gia);
+ $("#pSL").textContent=1;
+ $("#popup").classList.add("mo");
+ document.body.style.overflow="hidden";
+}
+function dongPopup(){$("#popup").classList.remove("mo");document.body.style.overflow=""}
+
+$("#tim").oninput=ve;
+$("#ds").onclick=e=>{const c=e.target.closest(".product");if(c&&!e.target.closest("[data-them]"))moPopup(c.dataset.id)};
+$("#popup").onclick=e=>{if(e.target.id==="popup")dongPopup()};
+addEventListener("keydown",e=>{if(e.key==="Escape")dongPopup()});
+$("#pTru").onclick=()=>$("#pSL").textContent=sl=Math.max(1,sl-1);
+$("#pCong").onclick=()=>$("#pSL").textContent=sl=Math.min(99,sl+1);
+$("#pThem").onclick=()=>{Gio.them(sp.id,sl);toast("✅ Đã thêm "+sl+" × "+sp.ten+" vào giỏ");dongPopup()};
+$("#pMua").onclick=()=>{Gio.them(sp.id,sl);location.href="dathang.html"};
+
+ve();
+moPopup(new URLSearchParams(location.search).get("sp")); // mở sẵn nếu có ?sp=NS01
+</script>
+</body>
+</html>

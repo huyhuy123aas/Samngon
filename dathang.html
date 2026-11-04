@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đặt Hàng - Nước Sâm Huy Nguyễn</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav id="nav"></nav>
+
+<div class="container">
+<h1 class="title">🛒 ĐẶT HÀNG</h1>
+
+<form id="orderForm" novalidate>
+<label for="ten">Họ và Tên</label>
+<input id="ten" type="text" autocomplete="name" required>
+
+<label for="sdt">Số Điện Thoại</label>
+<input id="sdt" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ví dụ: 0328274316" required>
+
+<label for="diaChi">Địa Chỉ Giao Hàng</label>
+<input id="diaChi" type="text" autocomplete="street-address" placeholder="Số nhà, đường, phường/xã, quận/huyện" required>
+
+<label>Giỏ Hàng</label>
+<div id="gio"></div>
+<div class="them">
+<select id="chonSP" aria-label="Chọn sản phẩm để thêm"><option value="">-- Chọn sản phẩm để thêm --</option></select>
+<button type="button" id="themSP" class="nut">＋ Thêm</button>
+</div>
+
+<div class="tong-tien">Tổng tiền: <span id="tongTien">0đ</span></div>
+
+<label for="ghiChu">Ghi Chú</label>
+<textarea id="ghiChu" rows="3" placeholder="Ví dụ: giao sau 18h..."></textarea>
+
+<p id="loi" class="loi" role="alert"></p>
+<button type="submit" id="gui" class="nut">✅ XÁC NHẬN ĐẶT HÀNG</button>
+</form>
+
+<div id="kq" class="kq" hidden></div>
+</div>
+
+<footer id="footer"></footer>
+
+<script src="app.js"></script>
+<script>
+const baoLoi=(m,el)=>{$("#loi").textContent=m;if(el)el.focus()};
+
+function veGio(){
+ const ds=Gio.ds();
+ $("#gio").innerHTML=ds.length?ds.map(i=>{const p=timSP(i.id);return`<div class="dong">
+<img src="${esc(p.img)}" alt="" onerror="this.onerror=null;this.src=ANH_LOI">
+<div class="ct"><b>${p.ten}</b><br><small>${tien(p.gia)}</small></div>
+<div class="sl"><button type="button" data-d="${p.id}" data-v="-1" aria-label="Giảm">−</button><span>${i.sl}</span><button type="button" data-d="${p.id}" data-v="1" aria-label="Tăng">+</button></div>
+<b class="tt">${tien(i.sl*p.gia)}</b>
+<button type="button" class="xoa" data-x="${p.id}" aria-label="Xóa ${esc(p.ten)}">✕</button></div>`}).join("")
+ :'<p class="trong">Giỏ hàng trống. Hãy chọn sản phẩm ở bên dưới 👇</p>';
+ $("#tongTien").textContent=tien(Gio.tong());
+}
+
+$("#chonSP").insertAdjacentHTML("beforeend",SAN_PHAM.map(p=>`<option value="${p.id}">${p.id} - ${p.ten} (${tien(p.gia)})</option>`).join(""));
+$("#themSP").onclick=()=>{const s=$("#chonSP");if(!s.value)return toast("Hãy chọn một sản phẩm",true);Gio.them(s.value);s.value="";veGio()};
+$("#gio").onclick=e=>{
+ const d=e.target.closest("[data-d]"),x=e.target.closest("[data-x]");
+ if(d){const c=Gio.ds().find(i=>i.id===d.dataset.d);Gio.dat(d.dataset.d,(c?c.sl:0)+Number(d.dataset.v))}
+ if(x)Gio.dat(x.dataset.x,0);
+ veGio();
+};
+
+// nhớ thông tin khách quen
+const khach=lay("khach",{});
+["ten","sdt","diaChi"].forEach(f=>$("#"+f).value=khach[f]||"");
+
+$("#orderForm").addEventListener("submit",async e=>{
+ e.preventDefault();baoLoi("");
+ const ten=$("#ten").value.trim(),sdt=$("#sdt").value.replace(/[\s.\-]/g,""),diaChi=$("#diaChi").value.trim(),ghiChu=$("#ghiChu").value.trim(),ds=Gio.ds();
+ if(!ds.length)return baoLoi("Giỏ hàng đang trống. Hãy thêm ít nhất một sản phẩm.",$("#chonSP"));
+ if(ten.length<2)return baoLoi("Vui lòng nhập họ và tên.",$("#ten"));
+ if(!/^(0|\+84)\d{9}$/.test(sdt))return baoLoi("Số điện thoại chưa đúng. Ví dụ: 0328274316.",$("#sdt"));
+ if(diaChi.length<8)return baoLoi("Vui lòng nhập địa chỉ giao hàng đầy đủ.",$("#diaChi"));
+
+ const now=new Date(),du={
+  ten,sdt,diaChi,
+  sanPham:ds.map(i=>i.id+" x"+i.sl).join(", "),
+  soLuong:Gio.tongSL(),
+  tongTien:tien(Gio.tong()),
+  // địa chỉ cũng ghi vào ghiChu để Google Sheet hiện tại vẫn lưu được mà không cần sửa Apps Script
+  ghiChu:"Địa chỉ: "+diaChi+(ghiChu?" | "+ghiChu:""),
+  maDon:"HN"+now.toISOString().slice(2,10).replace(/-/g,"")+"-"+Math.floor(100+Math.random()*900),
+  thoiGian:now.toLocaleString("vi-VN")
+ };
+
+ const nut=$("#gui"),ac=new AbortController(),h=setTimeout(()=>ac.abort(),15000);
+ nut.disabled=true;nut.textContent="⏳ Đang gửi...";
+ try{
+  await fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(du),signal:ac.signal});
+  ghi("khach",{ten,sdt,diaChi});
+  $("#kq").innerHTML=`<h2>✅ Đặt hàng thành công!</h2><p>Mã đơn: <b>${du.maDon}</b></p><ul>${ds.map(i=>`<li>${timSP(i.id).ten} × ${i.sl}</li>`).join("")}</ul><p>Tổng tiền: <b>${du.tongTien}</b></p><p>Chúng tôi sẽ liên hệ <b>${esc(ten)}</b> qua số <b>${esc(sdt)}</b> sớm nhất.</p><br><a class="btn" href="sanpham.html" style="margin:0">Tiếp tục mua sắm</a>`;
+  Gio.xoa();$("#orderForm").hidden=true;$("#kq").hidden=false;scrollTo(0,0);
+ }catch(err){
+  console.error(err);
+  baoLoi("❌ Chưa gửi được đơn hàng. Hãy kiểm tra mạng rồi thử lại, hoặc gọi "+SDT_SHOP+" để đặt trực tiếp.");
+ }finally{clearTimeout(h);nut.disabled=false;nut.textContent="✅ XÁC NHẬN ĐẶT HÀNG"}
+});
+
+addEventListener("pageshow",veGio);
+veGio();
+</script>
+</body>
+</html>
