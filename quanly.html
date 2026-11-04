@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Quản lý đơn hàng</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;font-size:15px}
+body{background:#f5fff5;color:#222}
+[hidden]{display:none!important}
+header{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:12px 16px;background:#0b6b2b;color:#fff}
+header b{font-size:18px;margin-right:auto}
+header small{opacity:.85}
+button{padding:9px 14px;border:0;border-radius:8px;background:#28a745;color:#fff;font-weight:bold;cursor:pointer}
+button:hover{background:#1f7d35}
+header button{background:#fff;color:#0b6b2b}
+main{max-width:1000px;margin:0 auto;padding:16px}
+#dn{max-width:360px;margin:60px auto;padding:25px;background:#fff;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,.1);text-align:center}
+#dn h2{color:darkgreen;margin-bottom:15px;font-size:22px}
+input{width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;margin-bottom:12px}
+#dn button{width:100%;padding:12px}
+.loi{color:#c62828;font-weight:bold;margin-top:10px;line-height:1.5}
+.tk{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.tk div{background:#fff;padding:14px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.08)}
+.tk small{color:#777}
+.tk b{display:block;font-size:22px;color:green;margin-top:4px}
+.loc{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+#chip{display:flex;flex-wrap:wrap;gap:8px}
+#chip button{background:#fff;color:#0b6b2b;border:1px solid #28a745}
+#chip button.on{background:#28a745;color:#fff}
+.loc input{flex:1;min-width:200px;margin:0}
+.don{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 3px 10px rgba(0,0,0,.08);border-left:6px solid #bbb;line-height:1.8}
+.don.moi{border-left-color:#e65100}
+.don.xn{border-left-color:#f9a825}
+.don.giao{border-left-color:#1565c0}
+.don.xong{border-left-color:#2e7d32}
+.don.huy{border-left-color:#999;opacity:.65}
+.dau{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+.dau select{padding:8px;border-radius:8px;border:1px solid #28a745;font-weight:bold}
+.don a{color:#0b6b2b}
+.tong{color:red;font-weight:bold}
+.mo{color:#777;text-align:center;padding:30px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:12px 22px;border-radius:50px;opacity:0;pointer-events:none;transition:.3s;z-index:20}
+#toast.show{opacity:1}
+#toast.err{background:#c62828}
+</style>
+</head>
+<body>
+
+<header>
+<b>🌿 Quản lý đơn hàng</b><small id="cn"></small>
+<span id="nut" hidden><button id="lm">🔄 Làm mới</button> <button id="xuat">⬇️ Xuất CSV</button> <button id="dx">Đăng xuất</button></span>
+</header>
+
+<form id="dn">
+<h2>🔒 Đăng nhập quản lý</h2>
+<input id="mk" type="password" placeholder="Mật khẩu quản lý" autocomplete="current-password" required>
+<button type="submit">Đăng nhập</button>
+<p id="loi" class="loi"></p>
+</form>
+
+<main id="chinh" hidden>
+<div class="tk" id="tk"></div>
+<div class="loc"><div id="chip"></div><input id="tim" type="search" placeholder="🔍 Tìm theo tên, SĐT, mã đơn, địa chỉ"></div>
+<div id="ds"></div>
+</main>
+
+<div id="toast" role="status"></div>
+
+<script>
+// Link Google Apps Script — dán giống link trong app.js
+const SCRIPT_URL="https://script.google.com/macros/s/AKfycbzPER3bAGb0_Ux2eHRLY3X_Do2m3AmpJUsSO1jIW-ofesL74H8-SuAoHcx07KWDyaUgHQ/exec";
+const TRANG_THAI=["Mới","Đã xác nhận","Đang giao","Đã giao","Đã hủy"];
+const LOP={"Mới":"moi","Đã xác nhận":"xn","Đang giao":"giao","Đã giao":"xong","Đã hủy":"huy"};
+// Tên hiển thị của sản phẩm (có sản phẩm mới thì thêm vào đây; chưa thêm thì hiện mã)
+const TEN_SP={NS01:"Nước Sâm 500ml",NS02:"Nước Sâm 1 Lít",NS03:"Nước Sâm Không Đường"};
+
+const $=s=>document.querySelector(s);
+const tien=n=>(Number(n)||0).toLocaleString("vi-VN")+"đ";
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const bo=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d");
+let KEY=sessionStorage.getItem("qlkey")||"",DS=[],HIEN=[],LOC="Tất cả";
+
+function toast(m,err){const t=$("#toast");t.textContent=m;t.className="show"+(err?" err":"");clearTimeout(t.h);t.h=setTimeout(()=>t.className="",2500)}
+async function goi(t){const r=await fetch(SCRIPT_URL+"?"+new URLSearchParams({key:KEY,...t}));return r.json()}
+
+function dangXuat(m){
+ KEY="";sessionStorage.removeItem("qlkey");document.title="Quản lý đơn hàng";
+ $("#dn").hidden=false;$("#chinh").hidden=true;$("#nut").hidden=true;$("#cn").textContent="";
+ $("#loi").textContent=m||"";$("#mk").value="";
+}
+
+async function tai(im){ // im = tải ngầm (tự làm mới), không báo lỗi
+ try{
+  const r=await goi({action:"list"});
+  if(!r.ok)return dangXuat(r.loi);
+  sessionStorage.setItem("qlkey",KEY);
+  DS=r.don.reverse(); // đơn mới nhất lên đầu
+  $("#dn").hidden=true;$("#chinh").hidden=false;$("#nut").hidden=false;$("#loi").textContent="";
+  $("#cn").textContent="Cập nhật "+new Date().toLocaleTimeString("vi-VN");
+  ve();
+ }catch(e){
+  if(!im)dangXuat("Chưa nhận được dữ liệu. Hãy kiểm tra mạng, và chắc chắn đã dán Code.gs rồi triển khai phiên bản mới.");
+ }
+}
+
+const sp=s=>String(s).split(",").map(x=>{const m=x.trim().match(/^(\S+)\s+x(\d+)$/);return m?esc(TEN_SP[m[1]]||m[1])+" × "+m[2]:esc(x.trim())}).join(", ");
+const gio=l=>{const m=String(l).match(/^(\d{4})-(\d\d)-(\d\d) (\d\d:\d\d)/);return m?m[4]+" "+m[3]+"/"+m[2]+"/"+m[1]:esc(l)};
+const the=d=>`<div class="don ${LOP[d.tt]||""}">
+<div class="dau"><b>${esc(d.ma)}</b><select data-row="${d.row}" data-ma="${esc(d.ma)}">${TRANG_THAI.map(t=>`<option${t===d.tt?" selected":""}>${t}</option>`).join("")}</select></div>
+<div><small>${gio(d.luc)}</small> · <span class="tong">${tien(d.tong)}</span></div>
+<div>👤 <b>${esc(d.ten)}</b> · 📞 <a href="tel:${esc(d.sdt)}">${esc(d.sdt)}</a></div>
+<div>📍 ${esc(d.diaChi)} · <a target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=${encodeURIComponent(d.diaChi)}">Bản đồ</a></div>
+<div>🧴 ${sp(d.sp)}</div>
+${d.ghiChu?`<div>📝 ${esc(d.ghiChu)}</div>`:""}</div>`;
+
+function ve(){
+ const p=n=>String(n).padStart(2,"0"),h=new Date(),ngay=h.getFullYear()+"-"+p(h.getMonth()+1)+"-"+p(h.getDate());
+ const hop=DS.filter(d=>d.tt!=="Đã hủy"),hn=hop.filter(d=>String(d.luc).startsWith(ngay)),sum=a=>a.reduce((t,d)=>t+(Number(d.tong)||0),0);
+ const moi=DS.filter(d=>d.tt==="Mới").length;
+ document.title=(moi?"("+moi+") ":"")+"Quản lý đơn hàng";
+ $("#tk").innerHTML=[["Đơn mới",moi],["Đơn hôm nay",hn.length],["Doanh thu hôm nay",tien(sum(hn))],["Tổng doanh thu",tien(sum(hop))]].map(([a,b])=>`<div><small>${a}</small><b>${b}</b></div>`).join("");
+ $("#chip").innerHTML=["Tất cả",...TRANG_THAI].map(t=>`<button type="button" data-t="${t}"${t===LOC?' class="on"':""}>${t} (${t==="Tất cả"?DS.length:DS.filter(d=>d.tt===t).length})</button>`).join("");
+ const q=bo($("#tim").value.trim());
+ HIEN=DS.filter(d=>(LOC==="Tất cả"||d.tt===LOC)&&bo([d.ma,d.ten,d.sdt,d.diaChi].join(" ")).includes(q));
+ $("#ds").innerHTML=HIEN.length?HIEN.map(the).join(""):'<p class="mo">Không có đơn nào.</p>';
+}
+
+$("#dn").onsubmit=async e=>{e.preventDefault();KEY=$("#mk").value;$("#loi").textContent="⏳ Đang đăng nhập...";await tai()};
+$("#lm").onclick=()=>tai();
+$("#dx").onclick=()=>dangXuat("");
+$("#tim").oninput=ve;
+$("#chip").onclick=e=>{const b=e.target.closest("[data-t]");if(b){LOC=b.dataset.t;ve()}};
+
+// đổi trạng thái đơn
+$("#ds").onchange=async e=>{
+ const s=e.target.closest("select[data-row]");if(!s)return;
+ const d=DS.find(x=>String(x.row)===s.dataset.row),cu=d.tt;
+ s.disabled=true;
+ try{
+  const r=await goi({action:"status",row:s.dataset.row,ma:s.dataset.ma,tt:s.value});
+  if(!r.ok)throw new Error(r.loi);
+  d.tt=s.value;toast("✅ "+d.ma+": "+d.tt);
+ }catch(err){s.value=cu;toast("❌ Chưa cập nhật được, hãy thử lại.",true)}
+ ve();
+};
+
+// xuất danh sách đang lọc ra file CSV (mở được bằng Excel)
+$("#xuat").onclick=()=>{
+ const c=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+ const dong=[["Mã đơn","Thời gian","Họ tên","SĐT","Địa chỉ","Sản phẩm","Số lượng","Tổng tiền","Ghi chú","Trạng thái"],...HIEN.map(d=>[d.ma,d.luc,d.ten,'="'+d.sdt+'"',d.diaChi,d.sp,d.sl,d.tong,d.ghiChu,d.tt])];
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(new Blob(["\ufeff"+dong.map(r=>r.map(c).join(",")).join("\r\n")],{type:"text/csv;charset=utf-8"}));
+ a.download="don-hang-"+new Date().toISOString().slice(0,10)+".csv";a.click();
+};
+
+setInterval(()=>{if(KEY&&!document.hidden)tai(true)},60000); // tự làm mới mỗi phút
+if(KEY)tai();
+</script>
+</body>
+</html>
