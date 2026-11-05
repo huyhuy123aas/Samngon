@@ -83,7 +83,10 @@ const bo=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,
 let KEY=sessionStorage.getItem("qlkey")||"",DS=[],HIEN=[],LOC="Tất cả";
 
 function toast(m,err){const t=$("#toast");t.textContent=m;t.className="show"+(err?" err":"");clearTimeout(t.h);t.h=setTimeout(()=>t.className="",2500)}
-async function goi(t){const r=await fetch(SCRIPT_URL+"?"+new URLSearchParams({key:KEY,...t}));return r.json()}
+async function goi(t){
+ const r=await fetch(SCRIPT_URL+"?"+new URLSearchParams({key:KEY,...t})),s=await r.text();
+ try{return JSON.parse(s)}catch(e){throw new Error("TEXT:"+s.replace(/<(style|script)[\s\S]*?<\/\1>/gi," ").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim().slice(0,150))}
+}
 
 function dangXuat(m){
  KEY="";sessionStorage.removeItem("qlkey");document.title="Quản lý đơn hàng";
@@ -101,7 +104,9 @@ async function tai(im){ // im = tải ngầm (tự làm mới), không báo lỗ
   $("#cn").textContent="Cập nhật "+new Date().toLocaleTimeString("vi-VN");
   ve();
  }catch(e){
-  if(!im)dangXuat("Chưa nhận được dữ liệu. Hãy kiểm tra mạng, và chắc chắn đã dán Code.gs rồi triển khai phiên bản mới.");
+  if(!im)dangXuat(e.message.startsWith("TEXT:")
+   ?"Google trả về: “"+e.message.slice(5)+"” → thường do chưa dán Code.gs mới, hoặc chưa chọn Phiên bản mới khi triển khai."
+   :"Không kết nối được tới Google. Hãy kiểm tra mạng, và bản triển khai phải để quyền truy cập là Bất kỳ ai (Anyone).");
  }
 }
 
