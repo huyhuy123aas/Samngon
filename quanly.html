@@ -41,6 +41,7 @@ input{width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;margin-bot
 .don a{color:#0b6b2b}
 .tong{color:red;font-weight:bold}
 .mo{color:#777;text-align:center;padding:30px}
+.ver{color:#999;font-size:12px;margin-top:14px}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:12px 22px;border-radius:50px;opacity:0;pointer-events:none;transition:.3s;z-index:20}
 #toast.show{opacity:1}
 #toast.err{background:#c62828}
@@ -58,6 +59,7 @@ input{width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;margin-bot
 <input id="mk" type="password" placeholder="Mật khẩu quản lý" autocomplete="current-password" required>
 <button type="submit">Đăng nhập</button>
 <p id="loi" class="loi"></p>
+<p id="ver" class="ver"></p>
 </form>
 
 <main id="chinh" hidden>
@@ -81,6 +83,7 @@ const tien=n=>(Number(n)||0).toLocaleString("vi-VN")+"đ";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const bo=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d");
 let KEY=sessionStorage.getItem("qlkey")||"",DS=[],HIEN=[],LOC="Tất cả";
+{const v=$("#ver");if(v)v.textContent="Đang dùng bản triển khai: "+SCRIPT_URL.split("/s/")[1].slice(0,12)+"…"} // để biết trang đang gọi đúng link nào
 
 function toast(m,err){const t=$("#toast");t.textContent=m;t.className="show"+(err?" err":"");clearTimeout(t.h);t.h=setTimeout(()=>t.className="",2500)}
 async function goi(t){
