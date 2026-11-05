@@ -83,7 +83,16 @@ const tien=n=>(Number(n)||0).toLocaleString("vi-VN")+"đ";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const bo=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d");
 let KEY=sessionStorage.getItem("qlkey")||"",DS=[],HIEN=[],LOC="Tất cả";
-{const v=$("#ver");if(v)v.textContent="Đang dùng bản triển khai: "+SCRIPT_URL.split("/s/")[1].slice(0,12)+"…"} // để biết trang đang gọi đúng link nào
+(async()=>{
+ const v=$("#ver");if(!v)return;
+ const id=SCRIPT_URL.split("/s/")[1].slice(0,12)+"…";
+ try{
+  const r=await goi({action:"ping"});
+  v.textContent=r.ok?"✅ Máy chủ bản "+r.phienBan+" ("+id+")":"⚠️ "+(r.loi||"Phản hồi lạ");
+ }catch(e){
+  v.textContent="⚠️ Máy chủ đang chạy code CŨ hoặc sai link ("+id+"). Hãy Triển khai → Phiên bản mới.";
+ }
+})();
 
 function toast(m,err){const t=$("#toast");t.textContent=m;t.className="show"+(err?" err":"");clearTimeout(t.h);t.h=setTimeout(()=>t.className="",2500)}
 async function goi(t){
