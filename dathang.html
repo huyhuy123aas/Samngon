@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Đặt Hàng - Nước Sâm Huy Nguyễn</title>
 <link rel="stylesheet" href="style.css">
+<style>
+/* ô nhập số lượng trong giỏ hàng */
+#gio .sl input.sl-in{width:46px;height:32px;margin:0;padding:0 4px;box-sizing:border-box;text-align:center;font:inherit;font-weight:700;border:1px solid #bbb;border-radius:6px;background:#fff}
+#gio .sl input.sl-in:focus{outline:2px solid #1b5e20;border-color:#1b5e20}
+</style>
 </head>
 <body>
 
@@ -55,7 +60,7 @@ function veGio(){
  $("#gio").innerHTML=ds.length?ds.map(i=>{const p=timSP(i.id);return`<div class="dong">
 <img src="${esc(p.img)}" alt="" onerror="this.onerror=null;this.src=ANH_LOI">
 <div class="ct"><b>${p.ten}</b><br><small>${tien(p.gia)}</small></div>
-<div class="sl"><button type="button" data-d="${p.id}" data-v="-1" aria-label="Giảm">−</button><span>${i.sl}</span><button type="button" data-d="${p.id}" data-v="1" aria-label="Tăng">+</button></div>
+<div class="sl"><button type="button" data-d="${p.id}" data-v="-1" aria-label="Giảm">−</button><input class="sl-in" type="text" inputmode="numeric" maxlength="3" autocomplete="off" data-n="${p.id}" value="${i.sl}" aria-label="Số lượng ${esc(p.ten)}"><button type="button" data-d="${p.id}" data-v="1" aria-label="Tăng">+</button></div>
 <b class="tt">${tien(i.sl*p.gia)}</b>
 <button type="button" class="xoa" data-x="${p.id}" aria-label="Xóa ${esc(p.ten)}">✕</button></div>`}).join("")
  :'<p class="trong">Giỏ hàng trống. Hãy chọn sản phẩm ở bên dưới 👇</p>';
@@ -66,10 +71,26 @@ $("#chonSP").insertAdjacentHTML("beforeend",SAN_PHAM.map(p=>`<option value="${p.
 $("#themSP").onclick=()=>{const s=$("#chonSP");if(!s.value)return toast("Hãy chọn một sản phẩm",true);Gio.them(s.value);s.value="";veGio()};
 $("#gio").onclick=e=>{
  const d=e.target.closest("[data-d]"),x=e.target.closest("[data-x]");
+ if(!d&&!x)return; // bấm vào ô nhập số lượng thì không vẽ lại giỏ hàng (sẽ mất con trỏ)
  if(d){const c=Gio.ds().find(i=>i.id===d.dataset.d);Gio.dat(d.dataset.d,(c?c.sl:0)+Number(d.dataset.v))}
  if(x)Gio.dat(x.dataset.x,0);
  veGio();
 };
+
+// ô nhập số lượng: chỉ cho gõ số, Enter/bấm ra ngoài thì cập nhật
+const SL_MAX=999,ONHAP="[data-n]";
+$("#gio").addEventListener("focusin",e=>{if(e.target.matches(ONHAP))e.target.select()});
+$("#gio").addEventListener("input",e=>{if(e.target.matches(ONHAP))e.target.value=e.target.value.replace(/\D/g,"")});
+$("#gio").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches(ONHAP)){e.preventDefault();e.target.blur()}}); // chặn Enter làm gửi form
+$("#gio").addEventListener("change",e=>{
+ const o=e.target.closest(ONHAP);if(!o)return;
+ const id=o.dataset.n,c=Gio.ds().find(i=>i.id===id),n=parseInt(o.value,10);
+ Gio.dat(id,n>=1?Math.min(n,SL_MAX):(c?c.sl:1)); // để trống/0 → giữ số cũ (muốn xóa thì bấm ✕)
+ const m=Gio.ds().find(i=>i.id===id);if(!m)return veGio();
+ o.value=m.sl;
+ o.closest(".dong").querySelector(".tt").textContent=tien(m.sl*timSP(id).gia);
+ $("#tongTien").textContent=tien(Gio.tong());
+});
 
 // nhớ thông tin khách quen
 const khach=lay("khach",{});
@@ -77,6 +98,7 @@ const khach=lay("khach",{});
 
 $("#orderForm").addEventListener("submit",async e=>{
  e.preventDefault();baoLoi("");
+ const dang=document.activeElement;if(dang&&dang.matches&&dang.matches("[data-n]"))dang.blur(); // chốt số lượng đang gõ dở
  const ten=$("#ten").value.trim(),sdt=$("#sdt").value.replace(/[\s.\-]/g,""),diaChi=$("#diaChi").value.trim(),ghiChu=$("#ghiChu").value.trim(),ds=Gio.ds();
  if(!ds.length)return baoLoi("Giỏ hàng đang trống. Hãy thêm ít nhất một sản phẩm.",$("#chonSP"));
  if(ten.length<2)return baoLoi("Vui lòng nhập họ và tên.",$("#ten"));
