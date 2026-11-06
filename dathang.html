@@ -35,6 +35,7 @@
 <label for="ghiChu">Ghi Chú</label>
 <textarea id="ghiChu" rows="3" placeholder="Ví dụ: giao sau 18h..."></textarea>
 
+<input id="web" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
 <p id="loi" class="loi" role="alert"></p>
 <button type="submit" id="gui" class="nut">✅ XÁC NHẬN ĐẶT HÀNG</button>
 </form>
@@ -46,6 +47,7 @@
 
 <script src="app.js"></script>
 <script>
+const T0=Date.now();let MA=null; // MA: giữ nguyên mã đơn khi gửi lại để không bị trùng đơn
 const baoLoi=(m,el)=>{$("#loi").textContent=m;if(el)el.focus()};
 
 function veGio(){
@@ -88,17 +90,20 @@ $("#orderForm").addEventListener("submit",async e=>{
   tongTien:tien(Gio.tong()),
   // địa chỉ cũng ghi vào ghiChu để Google Sheet hiện tại vẫn lưu được mà không cần sửa Apps Script
   ghiChu:"Địa chỉ: "+diaChi+(ghiChu?" | "+ghiChu:""),
-  maDon:"HN"+now.toISOString().slice(2,10).replace(/-/g,"")+"-"+Math.floor(100+Math.random()*900),
+  maDon:MA=MA||"HN"+now.toISOString().slice(2,10).replace(/-/g,"")+"-"+Math.floor(100+Math.random()*900),
+  web:$("#web").value,mat:Date.now()-T0,
   thoiGian:now.toLocaleString("vi-VN")
  };
 
  const nut=$("#gui"),ac=new AbortController(),h=setTimeout(()=>ac.abort(),15000);
  nut.disabled=true;nut.textContent="⏳ Đang gửi...";
  try{
-  await fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(du),signal:ac.signal});
+  const kq=await(await fetch(SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(du),signal:ac.signal})).json();
+  if(!kq.ok)return baoLoi("❌ "+(kq.loi||"Chưa gửi được đơn hàng."));
+  du.maDon=kq.maDon||du.maDon;du.tongTien=kq.tong!=null?tien(kq.tong):du.tongTien;MA=null; // dùng mã đơn + tổng tiền do server xác nhận
   ghi("khach",{ten,sdt,diaChi});
   // lưu đơn vào lịch sử (kèm tên + giá lúc đặt, để sau này đổi giá vẫn đúng)
-  LichSu.them({maDon:du.maDon,luc:now.toISOString(),ten,sdt,diaChi,ghiChu,tong:Gio.tong(),sp:ds.map(i=>{const p=timSP(i.id);return{id:i.id,ten:p.ten,gia:p.gia,sl:i.sl}})});
+  LichSu.them({maDon:du.maDon,luc:now.toISOString(),ten,sdt,diaChi,ghiChu,tong:kq.tong,sp:ds.map(i=>{const p=timSP(i.id);return{id:i.id,ten:p.ten,gia:p.gia,sl:i.sl}})});
   $("#kq").innerHTML=`<h2>✅ Đặt hàng thành công!</h2><p>Mã đơn: <b>${du.maDon}</b></p><ul>${ds.map(i=>`<li>${timSP(i.id).ten} × ${i.sl}</li>`).join("")}</ul><p>Tổng tiền: <b>${du.tongTien}</b></p><p>Chúng tôi sẽ liên hệ <b>${esc(ten)}</b> qua số <b>${esc(sdt)}</b> sớm nhất.</p><br><a class="btn" href="sanpham.html" style="margin:0">Tiếp tục mua sắm</a> <a class="btn" href="lichsu.html" style="margin:0;background:#1b5e20">Xem đơn của tôi</a>`;
   Gio.xoa();$("#orderForm").hidden=true;$("#kq").hidden=false;scrollTo(0,0);
  }catch(err){
