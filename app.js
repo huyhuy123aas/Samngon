@@ -1,5 +1,5 @@
 /* ===== DỮ LIỆU CHUNG — sửa giá/tên ở đây, mọi trang tự cập nhật ===== */
-const SCRIPT_URL="https://script.google.com/macros/s/AKfycbxeL1HwGlmrBTuWMKE00SJKqUFjFrAUBmgI9S8LopQ5C8tysKUaztuSVcarXryqDhco7w/exec";
+const SCRIPT_URL="https://script.google.com/macros/s/AKfycbwEUis7mibWFFbM_8USCQvmPQLvYVkyg2AUPuRFbkNrUkCDYwmZOX9dHVlZxEHEZXvQPQ/exec";
 const SDT_SHOP="0328274316",FACEBOOK="https://www.facebook.com/athuw24.1";
 const SAN_PHAM=[
 {id:"NS01",ten:"Nước Sâm 500ml",gia:10000,tag:"🔥 Bán chạy",mau:"red",
